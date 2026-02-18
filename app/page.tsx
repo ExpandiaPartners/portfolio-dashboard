@@ -1,65 +1,35 @@
-import { getAssets, getLeases, getMortgages } from './lib/sheets';
+import { getPortfolioData } from './lib/sheets';
+import Dashboard from './components/Dashboard';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Home() {
-  const assets = await getAssets();
-  const leases = await getLeases();
-  const mortgages = await getMortgages();
-
-  const totalAssets = assets.length;
-  const totalValue = assets.reduce((sum, a) => sum + (parseFloat(a['Current Value']) || 0), 0);
-  const totalRent = leases.reduce((sum, l) => sum + (parseFloat(l['Monthly Rent']) || 0), 0);
-  const totalDebt = mortgages.reduce((sum, m) => sum + (parseFloat(m['Outstanding Balance']) || parseFloat(m['Original Principal']) || 0), 0);
-
-  return (
-    <div className="min-h-screen bg-slate-100 p-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-8">Portfolio Dashboard</h1>
-      
-      {/* KPIs */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <p className="text-sm text-slate-500">Total Assets</p>
-          <p className="text-3xl font-bold text-slate-900">{totalAssets}</p>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <p className="text-sm text-slate-500">Portfolio Value</p>
-          <p className="text-3xl font-bold text-emerald-600">€{totalValue.toLocaleString()}</p>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <p className="text-sm text-slate-500">Monthly Rent</p>
-          <p className="text-3xl font-bold text-blue-600">€{totalRent.toLocaleString()}</p>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <p className="text-sm text-slate-500">Total Debt</p>
-          <p className="text-3xl font-bold text-orange-600">€{totalDebt.toLocaleString()}</p>
+  try {
+    const data = await getPortfolioData();
+    
+    return (
+      <Dashboard 
+        initialAssets={data.assets}
+        initialPipeline={data.pipeline}
+        initialConfig={data.config}
+      />
+    );
+  } catch (error) {
+    console.error('Error loading portfolio:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">Error Loading Portfolio</h1>
+          <p className="text-slate-600 mb-4">Could not connect to Google Sheets. Please check your configuration.</p>
+          <p className="text-xs text-slate-400">Make sure GOOGLE_CREDENTIALS environment variable is set correctly in Vercel.</p>
         </div>
       </div>
-
-      {/* Assets Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-800">Assets</h2>
-        </div>
-        <table className="w-full">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Address</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Purchase Price</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Current Value</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {assets.map((asset, i) => (
-              <tr key={i}>
-                <td className="px-6 py-4 text-sm font-medium text-slate-900">{asset['Name']}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{asset['Address']}</td>
-                <td className="px-6 py-4 text-sm text-slate-900 text-right">€{parseFloat(asset['Purchase Price'] || '0').toLocaleString()}</td>
-                <td className="px-6 py-4 text-sm text-emerald-600 text-right font-medium">€{parseFloat(asset['Current Value'] || '0').toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+    );
+  }
 }
