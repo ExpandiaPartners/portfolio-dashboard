@@ -65,7 +65,22 @@ export interface PortfolioData {
 
 function parseNumber(val: string | undefined): number {
   if (!val) return 0;
-  const cleaned = val.toString().replace(/[€,%\s]/g, '').replace(',', '.');
+  let cleaned = val.toString().replace(/[€%\s]/g, '');
+  // Handle Spanish format: 1.234,56 -> 1234.56
+  // If has both . and , then . is thousands separator and , is decimal
+  if (cleaned.includes('.') && cleaned.includes(',')) {
+    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+  } else if (cleaned.includes(',')) {
+    // Only comma - it's decimal separator
+    cleaned = cleaned.replace(',', '.');
+  }
+  // Remove any remaining dots that are thousands separators (e.g., 1.234 -> 1234)
+  // Only if there's no decimal point after
+  const parts = cleaned.split('.');
+  if (parts.length === 2 && parts[1].length === 3 && !cleaned.includes(',')) {
+    // This is likely 44.319 meaning 44319, not 44.319
+    cleaned = cleaned.replace('.', '');
+  }
   return parseFloat(cleaned) || 0;
 }
 
