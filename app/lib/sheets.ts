@@ -1,11 +1,12 @@
 import { google } from 'googleapis';
-import path from 'path';
 
 const SPREADSHEET_ID = '18gBd7snfKn8BR_OkdIKVdkmWpvdNlcyJtauK8JxLgAU';
 
 async function getSheets() {
+  const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
+  
   const auth = new google.auth.GoogleAuth({
-    keyFile: path.join(process.cwd(), 'credentials.json'),
+    credentials,
     scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
   });
   
